@@ -1,923 +1,1405 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>School Register App</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>स्कूल प्रबंधन ऐप</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
 
-<!-- Tailwind (CDN build, no compiler needed) -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- React + ReactDOM (production) -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-<!-- Babel standalone to transpile JSX right in the browser -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-storage-compat.js"></script>
 
 <style>
-  body { margin: 0; background: #FAF8F3; }
+:root{
+  --primary:#1e5f9e;
+  --primary-dark:#154a7a;
+  --accent:#e08a1e;
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --border:#e2e8f0;
+  --danger:#dc2626;
+  --success:#16a34a;
+  --radius:12px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Segoe UI',Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  padding-bottom:70px;
+}
+header{
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;
+  padding:16px 18px;
+  position:sticky;
+  top:0;
+  z-index:50;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+header h1{margin:0;font-size:18px;display:flex;align-items:center;gap:8px;}
+header .sub{font-size:12px;opacity:.85;margin-top:2px;}
+.header-row{display:flex;justify-content:space-between;align-items:center;}
+.icon-btn{
+  background:rgba(255,255,255,.15);
+  border:none;color:#fff;
+  padding:8px 12px;border-radius:8px;
+  font-size:13px;cursor:pointer;
+}
+.icon-btn:active{background:rgba(255,255,255,.3);}
+
+.container{max-width:900px;margin:0 auto;padding:14px;}
+
+/* Tabs / bottom nav */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff;border-top:1px solid var(--border);
+  display:flex;justify-content:space-around;
+  z-index:50;box-shadow:0 -2px 10px rgba(0,0,0,.06);
+}
+.tab-item{
+  flex:1;text-align:center;padding:8px 2px 6px;
+  font-size:11px;color:var(--muted);cursor:pointer;
+  border:none;background:none;
+}
+.tab-item .ic{font-size:20px;display:block;}
+.tab-item.active{color:var(--primary);font-weight:600;}
+
+.section{display:none;}
+.section.active{display:block;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:14px;
+  margin-bottom:12px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+  border:1px solid var(--border);
+}
+
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+select,input[type=text],input[type=number],input[type=date],input[type=password],textarea{
+  padding:9px 10px;border-radius:8px;border:1px solid var(--border);
+  font-size:14px;background:#fff;color:var(--text);width:100%;
+}
+select{flex:1;min-width:110px;}
+.filters select{flex:1;min-width:100px;}
+
+.btn{
+  background:var(--primary);color:#fff;border:none;
+  padding:10px 16px;border-radius:8px;font-size:14px;
+  cursor:pointer;font-weight:600;
+}
+.btn:active{background:var(--primary-dark);}
+.btn.secondary{background:#fff;color:var(--primary);border:1px solid var(--primary);}
+.btn.danger{background:var(--danger);}
+.btn.accent{background:var(--accent);}
+.btn.full{width:100%;}
+.btn.small{padding:6px 10px;font-size:12px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+.fab{
+  position:fixed;bottom:78px;right:16px;
+  width:56px;height:56px;border-radius:50%;
+  background:var(--accent);color:#fff;border:none;
+  font-size:26px;box-shadow:0 4px 12px rgba(0,0,0,.25);
+  cursor:pointer;z-index:49;
+}
+
+.list-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px;border-bottom:1px solid var(--border);gap:10px;
+}
+.list-item:last-child{border-bottom:none;}
+.list-item .info{flex:1;min-width:0;}
+.list-item .title{font-weight:600;font-size:14.5px;word-break:break-word;}
+.list-item .meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.list-item .actions{display:flex;gap:6px;flex-shrink:0;}
+.action-ic{
+  background:none;border:none;font-size:17px;cursor:pointer;padding:6px;
+  border-radius:6px;
+}
+.action-ic:active{background:var(--bg);}
+
+.badge{
+  display:inline-block;background:#eef4fc;color:var(--primary);
+  font-size:11px;padding:3px 8px;border-radius:20px;margin-right:4px;
+  font-weight:600;
+}
+.badge.gray{background:#f1f5f9;color:var(--muted);}
+
+.empty-state{
+  text-align:center;padding:40px 16px;color:var(--muted);
+}
+.empty-state .em{font-size:42px;display:block;margin-bottom:10px;}
+
+/* Modal */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:none;align-items:flex-end;justify-content:center;z-index:100;
+}
+.overlay.active{display:flex;}
+.modal{
+  background:#fff;width:100%;max-width:520px;
+  border-radius:16px 16px 0 0;
+  max-height:88vh;overflow-y:auto;
+  padding:18px;
+}
+@media(min-width:600px){
+  .overlay{align-items:center;}
+  .modal{border-radius:16px;}
+}
+.modal h2{margin:0 0 14px;font-size:17px;color:var(--primary-dark);}
+.form-group{margin-bottom:12px;}
+.form-group label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+.form-row{display:flex;gap:10px;}
+.form-row .form-group{flex:1;}
+.modal-actions{display:flex;gap:10px;margin-top:16px;}
+.modal-actions .btn{flex:1;}
+.close-x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;}
+.modal{position:relative;}
+
+.gallery-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+@media(min-width:500px){.gallery-grid{grid-template-columns:repeat(3,1fr);}}
+.gallery-item{
+  border-radius:10px;overflow:hidden;position:relative;
+  background:#000;aspect-ratio:1/1;cursor:pointer;
+  border:1px solid var(--border);
+}
+.gallery-item img,.gallery-item video{width:100%;height:100%;object-fit:cover;}
+.gallery-item .tag{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(transparent,rgba(0,0,0,.7));
+  color:#fff;font-size:10.5px;padding:14px 6px 5px;
+}
+.gallery-item .del-btn{
+  position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);
+  color:#fff;border:none;border-radius:6px;width:24px;height:24px;font-size:13px;
+}
+.gallery-item .play-ic{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:30px;color:#fff;text-shadow:0 0 6px rgba(0,0,0,.6);
+}
+
+.progress-wrap{background:#eee;border-radius:6px;overflow:hidden;height:8px;margin-top:6px;display:none;}
+.progress-bar{background:var(--primary);height:100%;width:0%;transition:width .2s;}
+
+.login-screen,.setup-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+}
+.login-box{background:#fff;border-radius:16px;padding:28px 22px;max-width:380px;width:100%;text-align:center;}
+.login-box .em{font-size:48px;}
+.login-box h2{margin:6px 0 4px;color:var(--primary-dark);}
+.login-box p{color:var(--muted);font-size:13.5px;margin-bottom:18px;}
+
+.toast{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:#1f2937;color:#fff;padding:10px 18px;border-radius:8px;
+  font-size:13.5px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;
+}
+.toast.show{opacity:1;}
+
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.doc-icon{font-size:28px;width:42px;text-align:center;flex-shrink:0;}
+
+.search-box{position:relative;margin-bottom:10px;}
+.search-box input{padding-left:34px;}
+.search-box .sic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);}
+
+.section-title{font-size:15px;font-weight:700;color:var(--primary-dark);margin:14px 0 8px;display:flex;align-items:center;gap:6px;}
+
+.hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+
+textarea{resize:vertical;min-height:60px;font-family:inherit;}
+
+.lock-note{
+  background:#fff7ed;border:1px solid #fdba74;color:#9a3412;
+  font-size:12px;padding:8px 10px;border-radius:8px;margin-bottom:12px;
+}
+
+code{background:#f1f5f9;padding:2px 5px;border-radius:4px;font-size:12px;}
 </style>
 </head>
 <body>
-<div id="root"></div>
 
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo } = React;
+<!-- ================= SETUP SCREEN (shown if firebase config missing) ================= -->
+<div id="setupScreen" class="setup-screen" style="display:none;">
+  <div class="login-box" style="max-width:480px;text-align:left;">
+    <h2 style="text-align:center;">⚙️ Firebase Setup आवश्यक है</h2>
+    <p style="text-align:center;">App चलाने से पहले नीचे अपना Firebase Config डालें।</p>
+    <div class="form-group">
+      <label>Firebase Config (JS Object) पेस्ट करें</label>
+      <textarea id="setupConfigInput" rows="9" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "databaseURL": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+    </div>
+    <button class="btn full" onclick="saveSetupConfig()">Save & Continue</button>
+    <p class="hint" style="margin-top:12px;">यह Config आपके ब्राउज़र में सेव हो जाएगा। README.md फ़ाइल में पूरी गाइड दी गई है कि Firebase Project कैसे बनाएं।</p>
+  </div>
+</div>
 
-/* ============================================================
-   Hand-written inline SVG icons (no external icon library needed,
-   so this single HTML file has zero runtime dependency risk).
-   Each icon is a small React component matching the lucide-react
-   API used elsewhere in this file: <IconName size={16} />
-   ============================================================ */
-function svgIcon(paths) {
-  return function Icon({ size = 18, className = "", strokeWidth = 2 }) {
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-        {paths}
-      </svg>
-    );
-  };
+<!-- ================= LOGIN SCREEN (for admin actions) ================= -->
+<div id="loginScreen" class="login-screen" style="display:none;">
+  <div class="login-box">
+    <div class="em">🏫</div>
+    <h2 id="schoolNameLogin">स्कूल प्रबंधन ऐप</h2>
+    <p>Admin Password डालें (Add/Edit/Delete के लिए)। सिर्फ देखने के लिए आगे बढ़ें।</p>
+    <div class="form-group" style="text-align:left;">
+      <input type="password" id="loginPassword" placeholder="Admin Password">
+    </div>
+    <button class="btn full" onclick="tryLogin()">🔓 Admin के रूप में लॉगिन करें</button>
+    <button class="btn secondary full" style="margin-top:10px;" onclick="continueAsViewer()">👁️ सिर्फ देखें (View Only)</button>
+    <p class="hint" id="firstTimeHint" style="display:none;">पहली बार? कोई भी पासवर्ड सेट करें, वही आपका Admin Password बन जाएगा।</p>
+  </div>
+</div>
+
+<!-- ================= MAIN APP ================= -->
+<div id="mainApp" style="display:none;">
+
+<header>
+  <div class="header-row">
+    <div>
+      <h1>🏫 <span id="schoolNameHeader">स्कूल प्रबंधन ऐप</span></h1>
+      <div class="sub" id="roleLabel">देख रहे हैं...</div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="icon-btn" onclick="openSettingsModal()">⚙️</button>
+      <button class="icon-btn" onclick="logoutUser()" id="logoutBtn">लॉगआउट</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div id="viewerNotice" class="lock-note" style="display:none;">
+    👁️ आप View-only mode में हैं। Add/Edit/Delete के लिए Admin login करें।
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <div id="sec-dashboard" class="section active">
+    <div class="card" style="text-align:center;background:linear-gradient(135deg,#eef4fc,#fff);">
+      <h2 style="margin:4px 0;color:var(--primary-dark);" id="dashSchoolName">स्कूल का नाम</h2>
+      <div class="hint" id="dashUdise"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="card" style="text-align:center;" onclick="switchTab('documents')">
+        <div style="font-size:26px;">📄</div>
+        <div style="font-weight:700;font-size:20px;" id="countDocs">0</div>
+        <div class="hint">Documents</div>
+      </div>
+      <div class="card" style="text-align:center;" onclick="switchTab('gallery')">
+        <div style="font-size:26px;">🖼️</div>
+        <div style="font-weight:700;font-size:20px;" id="countGallery">0</div>
+        <div class="hint">Gallery Items</div>
+      </div>
+      <div class="card" style="text-align:center;" onclick="switchTab('students')">
+        <div style="font-size:26px;">🎓</div>
+        <div style="font-weight:700;font-size:20px;" id="countStudents">0</div>
+        <div class="hint">Students</div>
+      </div>
+      <div class="card" style="text-align:center;" onclick="switchTab('staff')">
+        <div style="font-size:26px;">🧑‍🏫</div>
+        <div style="font-weight:700;font-size:20px;" id="countStaff">0</div>
+        <div class="hint">Staff</div>
+      </div>
+    </div>
+
+    <div class="section-title">📌 हाल की गतिविधि</div>
+    <div class="card" id="recentActivityCard">
+      <div class="empty-state"><span class="em">📭</span>कोई हाल की गतिविधि नहीं</div>
+    </div>
+  </div>
+
+  <!-- ============ DOCUMENTS ============ -->
+  <div id="sec-documents" class="section">
+    <div class="search-box">
+      <span class="sic">🔍</span>
+      <input type="text" id="docSearch" placeholder="Document खोजें..." oninput="renderDocuments()">
+    </div>
+    <div class="filters">
+      <select id="docFilterCategory" onchange="renderDocuments()">
+        <option value="">सभी श्रेणी</option>
+      </select>
+      <select id="docFilterClass" onchange="renderDocuments()">
+        <option value="">सभी कक्षा</option>
+      </select>
+    </div>
+    <div class="card" style="padding:0;" id="docListCard">
+      <div class="empty-state"><span class="em">📄</span>कोई Document नहीं मिला</div>
+    </div>
+  </div>
+
+  <!-- ============ GALLERY ============ -->
+  <div id="sec-gallery" class="section">
+    <div class="search-box">
+      <span class="sic">🔍</span>
+      <input type="text" id="gallerySearch" placeholder="Gallery में खोजें..." oninput="renderGallery()">
+    </div>
+    <div class="filters">
+      <select id="galleryFilterType" onchange="renderGallery()">
+        <option value="">सभी टाइप</option>
+        <option value="photo">फोटो</option>
+        <option value="video">वीडियो</option>
+      </select>
+      <select id="galleryFilterEvent" onchange="renderGallery()">
+        <option value="">सभी इवेंट</option>
+      </select>
+    </div>
+    <div id="galleryGrid" class="gallery-grid"></div>
+    <div id="galleryEmpty" class="empty-state" style="display:none;"><span class="em">🖼️</span>Gallery खाली है</div>
+  </div>
+
+  <!-- ============ STUDENTS ============ -->
+  <div id="sec-students" class="section">
+    <div class="search-box">
+      <span class="sic">🔍</span>
+      <input type="text" id="studentSearch" placeholder="नाम या Roll No से खोजें..." oninput="renderStudents()">
+    </div>
+    <div class="filters">
+      <select id="studentFilterClass" onchange="renderStudents()">
+        <option value="">सभी कक्षा</option>
+      </select>
+      <select id="studentFilterSection" onchange="renderStudents()">
+        <option value="">सभी सेक्शन</option>
+      </select>
+    </div>
+    <div class="card" style="padding:0;" id="studentListCard">
+      <div class="empty-state"><span class="em">🎓</span>कोई Student नहीं मिला</div>
+    </div>
+  </div>
+
+  <!-- ============ STAFF ============ -->
+  <div id="sec-staff" class="section">
+    <div class="search-box">
+      <span class="sic">🔍</span>
+      <input type="text" id="staffSearch" placeholder="नाम या पद से खोजें..." oninput="renderStaff()">
+    </div>
+    <div class="filters">
+      <select id="staffFilterDesignation" onchange="renderStaff()">
+        <option value="">सभी पद</option>
+      </select>
+    </div>
+    <div class="card" style="padding:0;" id="staffListCard">
+      <div class="empty-state"><span class="em">🧑‍🏫</span>कोई Staff नहीं मिला</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Floating Add Button -->
+<button class="fab" id="fabBtn" onclick="handleFabClick()">＋</button>
+
+<!-- Bottom Tab Bar -->
+<div class="tabbar">
+  <button class="tab-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+    <span class="ic">🏠</span>होम
+  </button>
+  <button class="tab-item" data-tab="documents" onclick="switchTab('documents')">
+    <span class="ic">📄</span>Docs
+  </button>
+  <button class="tab-item" data-tab="gallery" onclick="switchTab('gallery')">
+    <span class="ic">🖼️</span>Gallery
+  </button>
+  <button class="tab-item" data-tab="students" onclick="switchTab('students')">
+    <span class="ic">🎓</span>Students
+  </button>
+  <button class="tab-item" data-tab="staff" onclick="switchTab('staff')">
+    <span class="ic">🧑‍🏫</span>Staff
+  </button>
+</div>
+
+</div><!-- /mainApp -->
+
+<!-- ================= MODALS ================= -->
+
+<!-- Document Modal -->
+<div class="overlay" id="docModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('docModal')">✕</button>
+    <h2 id="docModalTitle">📄 Document जोड़ें</h2>
+    <input type="hidden" id="docId">
+    <div class="form-group">
+      <label>Document का नाम *</label>
+      <input type="text" id="docTitle" placeholder="जैसे: वार्षिक रिपोर्ट 2025-26">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>श्रेणी (Category) *</label>
+        <select id="docCategory">
+          <option value="Official">Official Document</option>
+          <option value="Circular">Circular / Notice</option>
+          <option value="Result">Result / Marksheet</option>
+          <option value="Timetable">Timetable</option>
+          <option value="Certificate">Certificate</option>
+          <option value="Financial">Financial / Budget</option>
+          <option value="UDISE">UDISE / eShikshaKosh</option>
+          <option value="Other">अन्य</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>कक्षा (Optional)</label>
+        <select id="docClass">
+          <option value="">सामान्य (All)</option>
+          <option>Nursery</option><option>LKG</option><option>UKG</option>
+          <option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option>
+          <option>VI</option><option>VII</option><option>VIII</option><option>IX</option><option>X</option>
+          <option>XI</option><option>XII</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Tags / नोट्स (Optional)</label>
+      <input type="text" id="docTags" placeholder="जैसे: 2025-26, जरूरी, अंतिम तारीख 15 जुलाई">
+    </div>
+    <div class="form-group">
+      <label>File चुनें (PDF, Word, Excel, Image आदि) *</label>
+      <input type="file" id="docFile">
+      <div class="progress-wrap" id="docProgressWrap"><div class="progress-bar" id="docProgressBar"></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal('docModal')">रद्द करें</button>
+      <button class="btn" id="docSaveBtn" onclick="saveDocument()">Save करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gallery Modal -->
+<div class="overlay" id="galleryModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('galleryModal')">✕</button>
+    <h2>🖼️ Photo/Video जोड़ें</h2>
+    <div class="form-group">
+      <label>शीर्षक / विवरण</label>
+      <input type="text" id="galleryTitle" placeholder="जैसे: वार्षिकोत्सव 2026">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Event / Category</label>
+        <input type="text" id="galleryEvent" placeholder="जैसे: Sports Day, Annual Function">
+      </div>
+      <div class="form-group">
+        <label>तारीख</label>
+        <input type="date" id="galleryDate">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Photo या Video चुनें (एक से ज़्यादा चुन सकते हैं) *</label>
+      <input type="file" id="galleryFile" accept="image/*,video/*" multiple>
+      <div class="progress-wrap" id="galleryProgressWrap"><div class="progress-bar" id="galleryProgressBar"></div></div>
+      <div class="hint" id="galleryProgressText"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal('galleryModal')">रद्द करें</button>
+      <button class="btn" id="gallerySaveBtn" onclick="saveGallery()">Upload करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- Student Modal -->
+<div class="overlay" id="studentModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('studentModal')">✕</button>
+    <h2 id="studentModalTitle">🎓 Student जोड़ें</h2>
+    <input type="hidden" id="studentId">
+    <div class="form-row">
+      <div class="form-group">
+        <label>छात्र का नाम *</label>
+        <input type="text" id="studentName" placeholder="पूरा नाम">
+      </div>
+      <div class="form-group">
+        <label>Roll No.</label>
+        <input type="text" id="studentRoll" placeholder="Roll No">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>कक्षा (Class) *</label>
+        <select id="studentClass">
+          <option value="">चुनें</option>
+          <option>Nursery</option><option>LKG</option><option>UKG</option>
+          <option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option>
+          <option>VI</option><option>VII</option><option>VIII</option><option>IX</option><option>X</option>
+          <option>XI</option><option>XII</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Section</label>
+        <select id="studentSection">
+          <option value="">--</option>
+          <option>A</option><option>B</option><option>C</option><option>D</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>पिता का नाम</label>
+        <input type="text" id="studentFather">
+      </div>
+      <div class="form-group">
+        <label>माता का नाम</label>
+        <input type="text" id="studentMother">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>जन्मतिथि</label>
+        <input type="date" id="studentDob">
+      </div>
+      <div class="form-group">
+        <label>लिंग</label>
+        <select id="studentGender">
+          <option value="">--</option>
+          <option>पुरुष</option><option>महिला</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>आधार नंबर</label>
+        <input type="text" id="studentAadhar" placeholder="XXXX-XXXX-XXXX">
+      </div>
+      <div class="form-group">
+        <label>PEN / अन्य ID</label>
+        <input type="text" id="studentPen">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>मोबाइल नंबर (अभिभावक)</label>
+      <input type="text" id="studentMobile">
+    </div>
+    <div class="form-group">
+      <label>पता</label>
+      <textarea id="studentAddress" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <label>नोट्स (Optional)</label>
+      <textarea id="studentNotes" rows="2"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal('studentModal')">रद्द करें</button>
+      <button class="btn" onclick="saveStudent()">Save करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- Staff Modal -->
+<div class="overlay" id="staffModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('staffModal')">✕</button>
+    <h2 id="staffModalTitle">🧑‍🏫 Staff जोड़ें</h2>
+    <input type="hidden" id="staffId">
+    <div class="form-group">
+      <label>नाम *</label>
+      <input type="text" id="staffName">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>पद (Designation) *</label>
+        <select id="staffDesignation">
+          <option>प्रधानाध्यापक / प्रधानाध्यापिका</option>
+          <option>सहायक अध्यापक</option>
+          <option>शिक्षा मित्र</option>
+          <option>अनुदेशक</option>
+          <option>लिपिक</option>
+          <option>चतुर्थ श्रेणी कर्मचारी</option>
+          <option>अन्य</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>विषय / Subject</label>
+        <input type="text" id="staffSubject" placeholder="जैसे: गणित, विज्ञान">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>जिन कक्षाओं को पढ़ाते हैं</label>
+        <input type="text" id="staffClasses" placeholder="जैसे: VI, VII-A">
+      </div>
+      <div class="form-group">
+        <label>मोबाइल नंबर</label>
+        <input type="text" id="staffMobile">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ज्वाइनिंग तिथि</label>
+        <input type="date" id="staffJoining">
+      </div>
+      <div class="form-group">
+        <label>Employee ID</label>
+        <input type="text" id="staffEmpId">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>नोट्स (Optional)</label>
+      <textarea id="staffNotes" rows="2"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal('staffModal')">रद्द करें</button>
+      <button class="btn" onclick="saveStaff()">Save करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay" id="settingsModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('settingsModal')">✕</button>
+    <h2>⚙️ Settings</h2>
+    <div class="form-group">
+      <label>स्कूल का नाम</label>
+      <input type="text" id="settingsSchoolName">
+    </div>
+    <div class="form-group">
+      <label>UDISE कोड</label>
+      <input type="text" id="settingsUdise">
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal('settingsModal')">रद्द करें</button>
+      <button class="btn" onclick="saveSettings()">Save करें</button>
+    </div>
+    <hr style="margin:16px 0;border-color:var(--border);">
+    <p class="hint">Admin Password बदलने के लिए नीचे नया पासवर्ड डालें।</p>
+    <div class="form-group">
+      <input type="password" id="newAdminPassword" placeholder="नया Admin Password">
+    </div>
+    <button class="btn accent full" onclick="changePassword()">पासवर्ड बदलें</button>
+  </div>
+</div>
+
+<!-- Media Viewer Modal -->
+<div class="overlay" id="viewerModal" onclick="if(event.target===this)closeModal('viewerModal')">
+  <div class="modal" style="max-width:90vw;padding:10px;">
+    <button class="close-x" onclick="closeModal('viewerModal')" style="background:rgba(0,0,0,.5);color:#fff;border-radius:50%;">✕</button>
+    <div id="viewerContent" style="text-align:center;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= CONFIG / INIT ================= */
+let firebaseConfig = null;
+try {
+  const stored = localStorage.getItem('schoolAppFirebaseConfig');
+  if (stored) firebaseConfig = JSON.parse(stored);
+} catch(e) {}
+
+let db, storage;
+let isAdmin = false;
+let ADMIN_PASSWORD_KEY = 'adminPassword';
+let currentTab = 'dashboard';
+
+let docsData = {};
+let galleryData = {};
+let studentsData = {};
+let staffData = {};
+let settingsData = { schoolName: 'स्कूल प्रबंधन ऐप', udise: '' };
+
+function initApp(){
+  if(!firebaseConfig){
+    document.getElementById('setupScreen').style.display='flex';
+    return;
+  }
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    storage = firebase.storage();
+  }catch(e){
+    showToast('Firebase Init Error: '+e.message);
+    document.getElementById('setupScreen').style.display='flex';
+    return;
+  }
+  document.getElementById('loginScreen').style.display='flex';
+  checkFirstTimePassword();
+  attachListeners();
 }
 
-const LayoutDashboard = svgIcon(<><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></>);
-const FileText = svgIcon(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></>);
-const ImageIcon = svgIcon(<><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></>);
-const Video = svgIcon(<><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></>);
-const Calendar = svgIcon(<><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></>);
-const Users = svgIcon(<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>);
-const UserSquare2 = svgIcon(<><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2"/><path d="M15 12h2"/><path d="M5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"/></>);
-const Plus = svgIcon(<><path d="M5 12h14"/><path d="M12 5v14"/></>);
-const Pencil = svgIcon(<><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></>);
-const Trash2 = svgIcon(<><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>);
-const X = svgIcon(<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>);
-const Search = svgIcon(<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>);
-const LogOut = svgIcon(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>);
-const Menu = svgIcon(<><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></>);
-const School = svgIcon(<><path d="m4 6 8-4 8 4"/><path d="M18 10v8"/><path d="M6 10v8"/><path d="M4 6v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6"/><path d="M12 3v4"/><path d="M9 22v-4a3 3 0 0 1 6 0v4"/></>);
-const Lock = svgIcon(<><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>);
-const Mail = svgIcon(<><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></>);
-const Eye = svgIcon(<><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>);
-const EyeOff = svgIcon(<><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 11s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></>);
-const PlayCircle = svgIcon(<><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></>);
-const GraduationCap = svgIcon(<><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.1 2.7 2 6 2s6-.9 6-2v-5"/></>);
-const Clock = svgIcon(<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>);
-const Save = svgIcon(<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>);
-const Download = svgIcon(<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>);
-const Upload = svgIcon(<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>);
-
-/* ============================================================
-   DATA LAYER
-   Runs on localStorage + browser File→base64 storage so the
-   whole app works from a single HTML file with zero backend.
-   Files are stored as base64 data-URLs inside IndexedDB-sized
-   localStorage — fine for a moderate number of documents/images.
-   See the FIREBASE markers below for where to plug in a real
-   backend later (Firestore + Storage) if you outgrow this.
-   ============================================================ */
-
-const STORAGE_KEY = "school_app_demo_data_v1";
-const CLASSES = ["Nursery", "LKG", "UKG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
-const SECTIONS = ["A", "B", "C", "D"];
-
-function seedData() {
-  return {
-    users: [
-      { id: "u1", name: "Rakesh Sharma", email: "admin@school.edu", password: "admin123", role: "admin" },
-      { id: "u2", name: "Priya Verma", email: "teacher@school.edu", password: "teacher123", role: "teacher", assignedClass: "8", assignedSection: "A" },
-    ],
-    documents: [
-      { id: "d1", title: "Annual Circular 2026", category: "Circular", class: "All", section: "All", fileName: "circular_2026.pdf", fileData: "", uploadedBy: "Rakesh Sharma", date: "2026-06-15" },
-      { id: "d2", title: "Class 8-A Fee Structure", category: "Fees", class: "8", section: "A", fileName: "fees_8a.pdf", fileData: "", uploadedBy: "Priya Verma", date: "2026-06-20" },
-      { id: "d3", title: "Admission Form 2026-27", category: "Admission", class: "All", section: "All", fileName: "admission_form.pdf", fileData: "", uploadedBy: "Rakesh Sharma", date: "2026-05-01" },
-    ],
-    gallery: [
-      { id: "g1", title: "Republic Day Celebration", type: "image", class: "All", section: "All", url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600", date: "2026-01-26" },
-      { id: "g2", title: "Class 8-A Science Fair", type: "image", class: "8", section: "A", url: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600", date: "2026-02-10" },
-      { id: "g3", title: "Annual Sports Day", type: "video", class: "All", section: "All", url: "", date: "2026-03-05" },
-    ],
-    timetable: [
-      { id: "t1", class: "8", section: "A", day: "Monday", period: "1", time: "8:00-8:45", subject: "Mathematics", teacher: "Priya Verma" },
-      { id: "t2", class: "8", section: "A", day: "Monday", period: "2", time: "8:45-9:30", subject: "Science", teacher: "Anil Kumar" },
-      { id: "t3", class: "8", section: "A", day: "Tuesday", period: "1", time: "8:00-8:45", subject: "English", teacher: "Sunita Rao" },
-    ],
-    students: [
-      { id: "s1", name: "Aarav Mehta", rollNo: "801", class: "8", section: "A", fatherName: "Vikram Mehta", contact: "9876543210", dob: "2012-04-12" },
-      { id: "s2", name: "Diya Kapoor", rollNo: "802", class: "8", section: "A", fatherName: "Rohit Kapoor", contact: "9876543211", dob: "2012-06-23" },
-      { id: "s3", name: "Kabir Singh", rollNo: "701", class: "7", section: "B", fatherName: "Manpreet Singh", contact: "9876543212", dob: "2013-01-15" },
-    ],
-    staff: [
-      { id: "st1", name: "Priya Verma", designation: "Teacher (Maths)", assignedClass: "8", assignedSection: "A", contact: "9123456780", email: "teacher@school.edu", joining: "2019-06-01" },
-      { id: "st2", name: "Anil Kumar", designation: "Teacher (Science)", assignedClass: "8", assignedSection: "A", contact: "9123456781", email: "anil@school.edu", joining: "2020-07-15" },
-      { id: "st3", name: "Sunita Rao", designation: "Teacher (English)", assignedClass: "8", assignedSection: "A", contact: "9123456782", email: "sunita@school.edu", joining: "2018-04-10" },
-    ],
-  };
+function saveSetupConfig(){
+  const raw = document.getElementById('setupConfigInput').value.trim();
+  if(!raw){ showToast('कृपया Config डालें'); return; }
+  try{
+    const cfg = JSON.parse(raw);
+    localStorage.setItem('schoolAppFirebaseConfig', JSON.stringify(cfg));
+    location.reload();
+  }catch(e){
+    showToast('गलत Config फॉर्मेट। JSON सही से पेस्ट करें।');
+  }
 }
 
-function loadDB() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return seedData();
-}
-function persist(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-  catch (e) { console.warn("Storage full or unavailable", e); }
-}
-function fileToDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+/* ================= AUTH (simple password stored in DB) ================= */
+function checkFirstTimePassword(){
+  db.ref('settings/'+ADMIN_PASSWORD_KEY).once('value').then(snap=>{
+    if(!snap.exists()){
+      document.getElementById('firstTimeHint').style.display='block';
+    }
   });
 }
 
-/* ============================================================
-   UI PRIMITIVES
-   ============================================================ */
-
-function Button({ children, variant = "primary", size = "md", className = "", ...props }) {
-  const base = "inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed";
-  const sizes = { sm: "px-3 py-1.5 text-sm", md: "px-4 py-2.5 text-sm", lg: "px-6 py-3 text-base" };
-  const variants = {
-    primary: "bg-[#1E2A4A] text-white hover:bg-[#162038] shadow-sm",
-    accent: "bg-[#E8A33D] text-[#1E2A4A] hover:bg-[#d9922a] shadow-sm font-semibold",
-    ghost: "bg-transparent text-[#4A5568] hover:bg-[#F0EEE6]",
-    danger: "bg-transparent text-[#C1443C] hover:bg-[#FBEAE8]",
-    outline: "bg-white text-[#1E2A4A] border border-[#D9D5C9] hover:bg-[#F7F5EF]",
-  };
-  return React.createElement("button", { className: `${base} ${sizes[size]} ${variants[variant]} ${className}`, ...props }, children);
-}
-
-function Modal({ open, onClose, title, children, wide }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className={`bg-white rounded-2xl shadow-2xl w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[88vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EDEAE0] sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="font-['Poppins'] font-semibold text-lg text-[#1E2A4A]">{title}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-[#F0EEE6] text-[#4A5568]"><X size={18} /></button>
-        </div>
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div className="mb-4">
-      <label className="block text-xs font-semibold uppercase tracking-wide text-[#8A8471] mb-1.5">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-const inputCls = "w-full px-3.5 py-2.5 rounded-lg border border-[#D9D5C9] bg-[#FCFBF8] text-[#1E2A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#E8A33D] focus:border-transparent placeholder:text-[#A9A492]";
-
-function Select({ value, onChange, options, placeholder }) {
-  return (
-    <select value={value} onChange={onChange} className={inputCls}>
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
-    </select>
-  );
-}
-
-function EmptyState({ icon: IconComp, title, subtitle }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-14 h-14 rounded-full bg-[#F0EEE6] flex items-center justify-center mb-3">
-        <IconComp size={24} className="text-[#B8B29C]" />
-      </div>
-      <p className="font-['Poppins'] font-medium text-[#1E2A4A]">{title}</p>
-      <p className="text-sm text-[#8A8471] mt-1">{subtitle}</p>
-    </div>
-  );
-}
-
-function Badge({ children, tone = "default" }) {
-  const tones = { default: "bg-[#F0EEE6] text-[#6B6555]", accent: "bg-[#FBF0DC] text-[#B37A1E]", blue: "bg-[#E8ECF5] text-[#1E2A4A]" };
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${tones[tone]}`}>{children}</span>;
-}
-
-function FilterBar({ filterClass, setFilterClass, filterSection, setFilterSection, search, setSearch, searchPlaceholder }) {
-  return (
-    <div className="flex flex-wrap gap-2.5 mb-5">
-      <div className="relative flex-1 min-w-[180px]">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A9A492]" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={searchPlaceholder || "Search..."} className={`${inputCls} pl-9`} />
-      </div>
-      <div className="w-36"><Select value={filterClass} onChange={(e) => setFilterClass(e.target.value)} options={["All", ...CLASSES]} /></div>
-      <div className="w-32"><Select value={filterSection} onChange={(e) => setFilterSection(e.target.value)} options={["All", ...SECTIONS]} /></div>
-    </div>
-  );
-}
-
-/* ============================================================
-   LOGIN SCREEN
-   ============================================================ */
-
-function LoginScreen({ users, onLogin }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const user = users.find((u) => u.email === email && u.password === password);
-    if (user) { setError(""); onLogin(user); }
-    else setError("Email ya password galat hai. Demo accounts neeche dekhein.");
-  };
-  const fillDemo = (role) => {
-    if (role === "admin") { setEmail("admin@school.edu"); setPassword("admin123"); }
-    else { setEmail("teacher@school.edu"); setPassword("teacher123"); }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#FAF8F3] flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl grid md:grid-cols-2 rounded-2xl overflow-hidden shadow-xl border border-[#EDEAE0]">
-        <div className="hidden md:flex flex-col justify-between bg-[#1E2A4A] p-10 text-white relative overflow-hidden">
-          <div className="absolute -right-16 -bottom-16 w-64 h-64 rounded-full bg-[#E8A33D]/10" />
-          <div className="absolute -right-6 top-10 w-32 h-32 rounded-full bg-[#E8A33D]/10" />
-          <div className="relative z-10">
-            <div className="w-11 h-11 rounded-xl bg-[#E8A33D] flex items-center justify-center mb-6"><School size={22} className="text-[#1E2A4A]" /></div>
-            <h1 className="font-['Poppins'] text-2xl font-semibold leading-tight">School Register</h1>
-            <p className="text-white/60 text-sm mt-2">Ek jagah — documents, gallery, timetable, students aur staff.</p>
-          </div>
-          <div className="relative z-10 space-y-3 text-sm text-white/70">
-            <div className="flex items-center gap-2"><FileText size={15} className="text-[#E8A33D]" /> Class-wise documents</div>
-            <div className="flex items-center gap-2"><ImageIcon size={15} className="text-[#E8A33D]" /> Photo & video gallery</div>
-            <div className="flex items-center gap-2"><Users size={15} className="text-[#E8A33D]" /> Student & staff records</div>
-          </div>
-        </div>
-        <div className="bg-white p-8 md:p-10">
-          <h2 className="font-['Poppins'] text-xl font-semibold text-[#1E2A4A] mb-1">Sign in karein</h2>
-          <p className="text-sm text-[#8A8471] mb-6">Apne admin ya teacher account se login karein.</p>
-          <form onSubmit={handleSubmit}>
-            <Field label="Email">
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A9A492]" />
-                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@school.edu" className={`${inputCls} pl-9`} required />
-              </div>
-            </Field>
-            <Field label="Password">
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A9A492]" />
-                <input value={password} onChange={(e) => setPassword(e.target.value)} type={showPw ? "text" : "password"} placeholder="••••••••" className={`${inputCls} pl-9 pr-9`} required />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A9A492]">
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </Field>
-            {error && <p className="text-sm text-[#C1443C] mb-3">{error}</p>}
-            <Button type="submit" variant="accent" className="w-full mt-2" size="lg">Login</Button>
-          </form>
-          <div className="mt-6 pt-5 border-t border-[#EDEAE0]">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#A9A492] mb-2">Demo accounts (try karein)</p>
-            <div className="flex gap-2">
-              <button onClick={() => fillDemo("admin")} className="flex-1 text-left px-3 py-2 rounded-lg border border-[#EDEAE0] hover:bg-[#F7F5EF] text-xs">
-                <div className="font-medium text-[#1E2A4A]">Admin</div><div className="text-[#8A8471]">admin@school.edu</div>
-              </button>
-              <button onClick={() => fillDemo("teacher")} className="flex-1 text-left px-3 py-2 rounded-lg border border-[#EDEAE0] hover:bg-[#F7F5EF] text-xs">
-                <div className="font-medium text-[#1E2A4A]">Teacher</div><div className="text-[#8A8471]">teacher@school.edu</div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   DASHBOARD
-   ============================================================ */
-
-function Dashboard({ data, currentUser }) {
-  const stats = [
-    { label: "Documents", value: data.documents.length, icon: FileText, tone: "blue" },
-    { label: "Gallery Items", value: data.gallery.length, icon: ImageIcon, tone: "accent" },
-    { label: "Students", value: data.students.length, icon: GraduationCap, tone: "blue" },
-    { label: "Staff", value: data.staff.length, icon: UserSquare2, tone: "accent" },
-  ];
-  return (
-    <div>
-      <div className="mb-6">
-        <h2 className="font-['Poppins'] text-xl font-semibold text-[#1E2A4A]">Namaste, {currentUser.name.split(" ")[0]} 👋</h2>
-        <p className="text-sm text-[#8A8471] mt-1">
-          {currentUser.role === "admin" ? "Aap admin hain — poora school data manage kar sakte hain." : `Aap Class ${currentUser.assignedClass}-${currentUser.assignedSection} ke teacher hain.`}
-        </p>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-[#EDEAE0] p-4">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${s.tone === "accent" ? "bg-[#FBF0DC]" : "bg-[#E8ECF5]"}`}>
-              <s.icon size={17} className={s.tone === "accent" ? "text-[#B37A1E]" : "text-[#1E2A4A]"} />
-            </div>
-            <div className="font-['Poppins'] text-2xl font-semibold text-[#1E2A4A]">{s.value}</div>
-            <div className="text-xs text-[#8A8471] mt-0.5">{s.label}</div>
-          </div>
-        ))}
-      </div>
-      <div className="bg-white rounded-xl border border-[#EDEAE0] p-5">
-        <h3 className="font-['Poppins'] font-semibold text-[#1E2A4A] mb-3 text-sm">Recent Documents</h3>
-        <div className="space-y-2">
-          {data.documents.slice(0, 4).map((d) => (
-            <div key={d.id} className="flex items-center justify-between py-2 border-b border-[#F5F3EC] last:border-0">
-              <div className="flex items-center gap-2.5">
-                <FileText size={15} className="text-[#8A8471]" />
-                <span className="text-sm text-[#1E2A4A]">{d.title}</span>
-              </div>
-              <Badge>{d.class === "All" ? "All Classes" : `Class ${d.class}-${d.section}`}</Badge>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   DOCUMENTS SECTION — with REAL file upload
-   ============================================================ */
-
-function DocumentForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState(initial || { title: "", category: "Circular", class: "All", section: "All", fileName: "", fileData: "" });
-  const [uploading, setUploading] = useState(false);
-
-  const handleFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 4.5 * 1024 * 1024) {
-      alert("File 4.5MB se choti honi chahiye (browser storage limit). Bade files ke liye Firebase Storage connect karein.");
-      return;
+function tryLogin(){
+  const pass = document.getElementById('loginPassword').value;
+  if(!pass){ showToast('Password डालें'); return; }
+  db.ref('settings/'+ADMIN_PASSWORD_KEY).once('value').then(snap=>{
+    if(!snap.exists()){
+      // first time - set this as password
+      db.ref('settings/'+ADMIN_PASSWORD_KEY).set(pass).then(()=>{
+        isAdmin = true;
+        sessionStorage.setItem('schoolAppAdmin','1');
+        enterApp();
+        showToast('Admin Password सेट हो गया ✅');
+      });
+    } else if(snap.val() === pass){
+      isAdmin = true;
+      sessionStorage.setItem('schoolAppAdmin','1');
+      enterApp();
+    } else {
+      showToast('गलत Password ❌');
     }
-    setUploading(true);
-    const dataUrl = await fileToDataURL(file);
-    setForm((f) => ({ ...f, fileName: file.name, fileData: dataUrl }));
-    setUploading(false);
-  };
-
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
-      <Field label="Title"><input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputCls} placeholder="e.g. Annual Circular 2026" /></Field>
-      <Field label="Category"><Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} options={["Circular", "Fees", "Admission", "Result", "Notice", "Policy", "Other"]} /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Class"><Select value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} options={["All", ...CLASSES]} /></Field>
-        <Field label="Section"><Select value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} options={["All", ...SECTIONS]} /></Field>
-      </div>
-      <Field label="File (PDF, image, doc)">
-        <div className="border-2 border-dashed border-[#D9D5C9] rounded-lg p-4 text-center">
-          <Upload size={18} className="mx-auto text-[#A9A492] mb-1.5" />
-          <p className="text-xs text-[#8A8471]">{uploading ? "Uploading..." : (form.fileName || "PDF, DOC ya image select karein")}</p>
-          <input type="file" className="hidden" id="doc-file" onChange={handleFile} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
-          <label htmlFor="doc-file" className="inline-block mt-2 text-xs font-medium text-[#1E2A4A] underline cursor-pointer">Browse file</label>
-        </div>
-      </Field>
-      <div className="flex gap-2 mt-6">
-        <Button type="submit" variant="accent" className="flex-1" disabled={uploading}><Save size={15} /> Save Document</Button>
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-      </div>
-    </form>
-  );
+  });
 }
 
-function downloadFile(fileData, fileName) {
-  if (!fileData) { alert("Is document ke liye koi file upload nahi hai."); return; }
-  const a = document.createElement("a");
-  a.href = fileData;
-  a.download = fileName || "download";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+function continueAsViewer(){
+  isAdmin = false;
+  sessionStorage.setItem('schoolAppAdmin','0');
+  enterApp();
 }
 
-function DocumentsSection({ data, updateData, currentUser }) {
-  const [filterClass, setFilterClass] = useState("All");
-  const [filterSection, setFilterSection] = useState("All");
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null);
-
-  const filtered = useMemo(() => data.documents.filter((d) => {
-    if (filterClass !== "All" && d.class !== "All" && d.class !== filterClass) return false;
-    if (filterSection !== "All" && d.section !== "All" && d.section !== filterSection) return false;
-    if (search && !d.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }), [data.documents, filterClass, filterSection, search]);
-
-  const handleSave = (form) => {
-    if (modal.mode === "edit") updateData("documents", data.documents.map((d) => (d.id === modal.item.id ? { ...d, ...form } : d)));
-    else updateData("documents", [...data.documents, { ...form, id: "d" + Date.now(), uploadedBy: currentUser.name, date: new Date().toISOString().slice(0, 10) }]);
-    setModal(null);
-  };
-  const handleDelete = (id) => { if (confirm("Yeh document delete karna hai?")) updateData("documents", data.documents.filter((d) => d.id !== id)); };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <div><h2 className="font-['Poppins'] text-xl font-semibold text-[#1E2A4A]">Documents</h2><p className="text-sm text-[#8A8471]">Official circulars, forms aur notices.</p></div>
-        <Button variant="accent" onClick={() => setModal({ mode: "add" })}><Plus size={16} /> Add Document</Button>
-      </div>
-      <FilterBar {...{ filterClass, setFilterClass, filterSection, setFilterSection, search, setSearch }} searchPlaceholder="Document search karein..." />
-      {filtered.length === 0 ? <EmptyState icon={FileText} title="Koi document nahi mila" subtitle="Naya document add karke shuru karein." /> : (
-        <div className="bg-white rounded-xl border border-[#EDEAE0] overflow-hidden">
-          {filtered.map((d) => (
-            <div key={d.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-[#F5F3EC] last:border-0 hover:bg-[#FCFBF8]">
-              <div className="w-9 h-9 rounded-lg bg-[#E8ECF5] flex items-center justify-center shrink-0"><FileText size={16} className="text-[#1E2A4A]" /></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#1E2A4A] truncate">{d.title}</p>
-                <p className="text-xs text-[#8A8471] mt-0.5">{d.fileName || "No file"} · {d.date}</p>
-              </div>
-              <Badge tone="accent">{d.category}</Badge>
-              <Badge>{d.class === "All" ? "All" : `${d.class}-${d.section}`}</Badge>
-              <div className="flex gap-1">
-                <button onClick={() => downloadFile(d.fileData, d.fileName)} className="p-2 rounded-lg hover:bg-[#F0EEE6] text-[#8A8471]"><Download size={15} /></button>
-                <button onClick={() => setModal({ mode: "edit", item: d })} className="p-2 rounded-lg hover:bg-[#F0EEE6] text-[#8A8471]"><Pencil size={15} /></button>
-                <button onClick={() => handleDelete(d.id)} className="p-2 rounded-lg hover:bg-[#FBEAE8] text-[#C1443C]"><Trash2 size={15} /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === "edit" ? "Edit Document" : "Add Document"}>
-        <DocumentForm initial={modal?.item} onSave={handleSave} onCancel={() => setModal(null)} />
-      </Modal>
-    </div>
-  );
+function logoutUser(){
+  isAdmin = false;
+  sessionStorage.removeItem('schoolAppAdmin');
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginPassword').value='';
 }
 
-/* ============================================================
-   GALLERY SECTION — with REAL image/video upload
-   ============================================================ */
+function enterApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  document.getElementById('roleLabel').textContent = isAdmin ? '🔓 Admin Mode' : '👁️ View Only Mode';
+  document.getElementById('viewerNotice').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('fabBtn').style.display = isAdmin ? 'block' : 'none';
+  updateFabForTab();
+}
 
-function GalleryForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState(initial || { title: "", type: "image", class: "All", section: "All", url: "" });
-  const [uploading, setUploading] = useState(false);
+/* ================= UTIL ================= */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+function openModal(id){ document.getElementById(id).classList.add('active'); }
+function requireAdmin(){
+  if(!isAdmin){ showToast('⚠️ यह काम करने के लिए Admin Login जरूरी है'); return false; }
+  return true;
+}
+function fmtDate(d){
+  if(!d) return '';
+  try{ return new Date(d).toLocaleDateString('hi-IN',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){return d;}
+}
+function fileIcon(name){
+  const ext = (name||'').split('.').pop().toLowerCase();
+  if(['pdf'].includes(ext)) return '📕';
+  if(['doc','docx'].includes(ext)) return '📘';
+  if(['xls','xlsx','csv'].includes(ext)) return '📗';
+  if(['ppt','pptx'].includes(ext)) return '📙';
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
+  return '📄';
+}
 
-  const handleFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 4.5 * 1024 * 1024) {
-      alert("File 4.5MB se choti honi chahiye (browser storage limit). Bade video files ke liye Firebase Storage connect karein.");
-      return;
+/* ================= TABS ================= */
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  const activeBtn = document.querySelector(`.tab-item[data-tab="${tab}"]`);
+  if(activeBtn) activeBtn.classList.add('active');
+  updateFabForTab();
+}
+function updateFabForTab(){
+  const fab = document.getElementById('fabBtn');
+  fab.style.display = (isAdmin && currentTab!=='dashboard') ? 'block' : 'none';
+}
+function handleFabClick(){
+  if(!requireAdmin()) return;
+  if(currentTab==='documents') openDocModal();
+  else if(currentTab==='gallery') openGalleryModal();
+  else if(currentTab==='students') openStudentModal();
+  else if(currentTab==='staff') openStaffModal();
+}
+
+/* ================= LISTENERS ================= */
+function attachListeners(){
+  db.ref('settings').on('value', snap=>{
+    const v = snap.val() || {};
+    settingsData = { schoolName: v.schoolName || 'स्कूल प्रबंधन ऐप', udise: v.udise || '' };
+    document.getElementById('schoolNameHeader').textContent = settingsData.schoolName;
+    document.getElementById('schoolNameLogin').textContent = settingsData.schoolName;
+    document.getElementById('dashSchoolName').textContent = settingsData.schoolName;
+    document.getElementById('dashUdise').textContent = settingsData.udise ? 'UDISE: '+settingsData.udise : '';
+    document.title = settingsData.schoolName;
+  });
+
+  db.ref('documents').on('value', snap=>{
+    docsData = snap.val() || {};
+    document.getElementById('countDocs').textContent = Object.keys(docsData).length;
+    populateFilterOptions();
+    renderDocuments();
+  });
+
+  db.ref('gallery').on('value', snap=>{
+    galleryData = snap.val() || {};
+    document.getElementById('countGallery').textContent = Object.keys(galleryData).length;
+    populateFilterOptions();
+    renderGallery();
+  });
+
+  db.ref('students').on('value', snap=>{
+    studentsData = snap.val() || {};
+    document.getElementById('countStudents').textContent = Object.keys(studentsData).length;
+    populateFilterOptions();
+    renderStudents();
+  });
+
+  db.ref('staff').on('value', snap=>{
+    staffData = snap.val() || {};
+    document.getElementById('countStaff').textContent = Object.keys(staffData).length;
+    populateFilterOptions();
+    renderStaff();
+  });
+}
+
+function populateFilterOptions(){
+  // Documents
+  const cats = [...new Set(Object.values(docsData).map(d=>d.category).filter(Boolean))].sort();
+  fillSelect('docFilterCategory', cats, 'सभी श्रेणी');
+  const dclasses = [...new Set(Object.values(docsData).map(d=>d.cls).filter(Boolean))].sort();
+  fillSelect('docFilterClass', dclasses, 'सभी कक्षा');
+
+  // Gallery
+  const events = [...new Set(Object.values(galleryData).map(g=>g.event).filter(Boolean))].sort();
+  fillSelect('galleryFilterEvent', events, 'सभी इवेंट');
+
+  // Students
+  const sclasses = [...new Set(Object.values(studentsData).map(s=>s.cls).filter(Boolean))].sort();
+  fillSelect('studentFilterClass', sclasses, 'सभी कक्षा');
+  const sections = [...new Set(Object.values(studentsData).map(s=>s.section).filter(Boolean))].sort();
+  fillSelect('studentFilterSection', sections, 'सभी सेक्शन');
+
+  // Staff
+  const desigs = [...new Set(Object.values(staffData).map(s=>s.designation).filter(Boolean))].sort();
+  fillSelect('staffFilterDesignation', desigs, 'सभी पद');
+}
+function fillSelect(id, values, placeholder){
+  const sel = document.getElementById(id);
+  const current = sel.value;
+  sel.innerHTML = `<option value="">${placeholder}</option>` + values.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  if(values.includes(current)) sel.value = current;
+}
+function escapeHtml(str){
+  if(str===undefined||str===null) return '';
+  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ================= DOCUMENTS ================= */
+function openDocModal(id){
+  document.getElementById('docModalTitle').textContent = id ? '📄 Document Edit करें' : '📄 Document जोड़ें';
+  document.getElementById('docId').value = id || '';
+  if(id){
+    const d = docsData[id];
+    document.getElementById('docTitle').value = d.title||'';
+    document.getElementById('docCategory').value = d.category||'Official';
+    document.getElementById('docClass').value = d.cls||'';
+    document.getElementById('docTags').value = d.tags||'';
+  } else {
+    document.getElementById('docTitle').value='';
+    document.getElementById('docCategory').value='Official';
+    document.getElementById('docClass').value='';
+    document.getElementById('docTags').value='';
+    document.getElementById('docFile').value='';
+  }
+  openModal('docModal');
+}
+
+function saveDocument(){
+  if(!requireAdmin()) return;
+  const id = document.getElementById('docId').value;
+  const title = document.getElementById('docTitle').value.trim();
+  const category = document.getElementById('docCategory').value;
+  const cls = document.getElementById('docClass').value;
+  const tags = document.getElementById('docTags').value.trim();
+  const fileInput = document.getElementById('docFile');
+  const file = fileInput.files[0];
+
+  if(!title){ showToast('कृपया नाम डालें'); return; }
+  if(!id && !file){ showToast('कृपया File चुनें'); return; }
+
+  const btn = document.getElementById('docSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  function writeData(fileUrl, fileName){
+    const docId = id || db.ref('documents').push().key;
+    const payload = {
+      title, category, cls, tags,
+      updatedAt: Date.now()
+    };
+    if(fileUrl){ payload.fileUrl = fileUrl; payload.fileName = fileName; }
+    if(!id){ payload.createdAt = Date.now(); }
+    db.ref('documents/'+docId).update(id ? payload : Object.assign({createdAt:Date.now()}, payload)).then(()=>{
+      showToast('✅ Document Save हो गया');
+      closeModal('docModal');
+      btn.disabled=false; btn.textContent='Save करें';
+      document.getElementById('docProgressWrap').style.display='none';
+    }).catch(e=>{
+      showToast('Error: '+e.message);
+      btn.disabled=false; btn.textContent='Save करें';
+    });
+  }
+
+  if(file){
+    const path = 'documents/'+Date.now()+'_'+file.name;
+    const ref = storage.ref(path);
+    const task = ref.put(file);
+    document.getElementById('docProgressWrap').style.display='block';
+    task.on('state_changed', snap=>{
+      const pct = (snap.bytesTransferred/snap.totalBytes)*100;
+      document.getElementById('docProgressBar').style.width = pct+'%';
+    }, err=>{
+      showToast('Upload Error: '+err.message);
+      btn.disabled=false; btn.textContent='Save करें';
+    }, ()=>{
+      task.snapshot.ref.getDownloadURL().then(url=>{
+        writeData(url, file.name);
+      });
+    });
+  } else {
+    writeData(null, null);
+  }
+}
+
+function deleteDocument(id){
+  if(!requireAdmin()) return;
+  if(!confirm('क्या आप वाकई यह Document डिलीट करना चाहते हैं?')) return;
+  const d = docsData[id];
+  db.ref('documents/'+id).remove().then(()=>{
+    showToast('🗑️ Document हटा दिया गया');
+    if(d && d.fileUrl){
+      try{ storage.refFromURL(d.fileUrl).delete().catch(()=>{}); }catch(e){}
     }
-    setUploading(true);
-    const dataUrl = await fileToDataURL(file);
-    setForm((f) => ({ ...f, url: dataUrl }));
-    setUploading(false);
-  };
-
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
-      <Field label="Title"><input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputCls} placeholder="e.g. Annual Day Photos" /></Field>
-      <Field label="Type">
-        <div className="flex gap-2">
-          {["image", "video"].map((t) => (
-            <button type="button" key={t} onClick={() => setForm({ ...form, type: t })} className={`flex-1 py-2 rounded-lg text-sm font-medium border ${form.type === t ? "bg-[#1E2A4A] text-white border-[#1E2A4A]" : "border-[#D9D5C9] text-[#4A5568]"}`}>
-              {t === "image" ? <ImageIcon size={14} className="inline mr-1.5" /> : <Video size={14} className="inline mr-1.5" />}
-              {t === "image" ? "Photo" : "Video"}
-            </button>
-          ))}
-        </div>
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Class"><Select value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} options={["All", ...CLASSES]} /></Field>
-        <Field label="Section"><Select value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} options={["All", ...SECTIONS]} /></Field>
-      </div>
-      <Field label="Upload file">
-        <div className="border-2 border-dashed border-[#D9D5C9] rounded-lg p-4 text-center">
-          <Upload size={18} className="mx-auto text-[#A9A492] mb-1.5" />
-          <p className="text-xs text-[#8A8471]">{uploading ? "Uploading..." : (form.url ? "File selected ✓" : "Photo ya video select karein")}</p>
-          <input type="file" className="hidden" id="gallery-file" onChange={handleFile} accept={form.type === "image" ? "image/*" : "video/*"} />
-          <label htmlFor="gallery-file" className="inline-block mt-2 text-xs font-medium text-[#1E2A4A] underline cursor-pointer">Browse file</label>
-        </div>
-      </Field>
-      <Field label="Ya URL paste karein (optional)">
-        <input value={form.url && form.url.startsWith("data:") ? "" : form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className={inputCls} placeholder="https://..." />
-      </Field>
-      <div className="flex gap-2 mt-6">
-        <Button type="submit" variant="accent" className="flex-1" disabled={uploading}><Save size={15} /> Save</Button>
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-      </div>
-    </form>
-  );
+  });
 }
 
-function GallerySection({ data, updateData }) {
-  const [filterClass, setFilterClass] = useState("All");
-  const [filterSection, setFilterSection] = useState("All");
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null);
+function renderDocuments(){
+  const search = (document.getElementById('docSearch').value||'').toLowerCase();
+  const fc = document.getElementById('docFilterCategory').value;
+  const flCls = document.getElementById('docFilterClass').value;
+  const wrap = document.getElementById('docListCard');
 
-  const filtered = useMemo(() => data.gallery.filter((g) => {
-    if (filterClass !== "All" && g.class !== "All" && g.class !== filterClass) return false;
-    if (filterSection !== "All" && g.section !== "All" && g.section !== filterSection) return false;
-    if (search && !g.title.toLowerCase().includes(search.toLowerCase())) return false;
+  let entries = Object.entries(docsData);
+  entries = entries.filter(([id,d])=>{
+    if(fc && d.category!==fc) return false;
+    if(flCls && d.cls!==flCls) return false;
+    if(search && !(d.title||'').toLowerCase().includes(search) && !(d.tags||'').toLowerCase().includes(search)) return false;
     return true;
-  }), [data.gallery, filterClass, filterSection, search]);
+  });
+  entries.sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
 
-  const handleSave = (form) => {
-    if (modal.mode === "edit") updateData("gallery", data.gallery.map((g) => (g.id === modal.item.id ? { ...g, ...form } : g)));
-    else updateData("gallery", [...data.gallery, { ...form, id: "g" + Date.now(), date: new Date().toISOString().slice(0, 10) }]);
-    setModal(null);
-  };
-  const handleDelete = (id) => { if (confirm("Yeh item delete karna hai?")) updateData("gallery", data.gallery.filter((g) => g.id !== id)); };
+  if(entries.length===0){
+    wrap.innerHTML = `<div class="empty-state"><span class="em">📄</span>कोई Document नहीं मिला</div>`;
+    return;
+  }
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <div><h2 className="font-['Poppins'] text-xl font-semibold text-[#1E2A4A]">Gallery</h2><p className="text-sm text-[#8A8471]">Photos aur videos, class-wise organized.</p></div>
-        <Button variant="accent" onClick={() => setModal({ mode: "add" })}><Plus size={16} /> Add Media</Button>
-      </div>
-      <FilterBar {...{ filterClass, setFilterClass, filterSection, setFilterSection, search, setSearch }} searchPlaceholder="Gallery search karein..." />
-      {filtered.length === 0 ? <EmptyState icon={ImageIcon} title="Gallery khaali hai" subtitle="Photo ya video add karein." /> : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {filtered.map((g) => (
-            <div key={g.id} className="bg-white rounded-xl border border-[#EDEAE0] overflow-hidden group">
-              <div className="aspect-video bg-[#F0EEE6] flex items-center justify-center relative overflow-hidden">
-                {g.type === "image" && g.url ? <img src={g.url} alt={g.title} className="w-full h-full object-cover" />
-                  : g.type === "video" && g.url ? <video src={g.url} className="w-full h-full object-cover" controls />
-                  : g.type === "video" ? <PlayCircle size={32} className="text-[#B8B29C]" />
-                  : <ImageIcon size={28} className="text-[#B8B29C]" />}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
-                  <button onClick={() => setModal({ mode: "edit", item: g })} className="p-2 rounded-lg bg-white/90 text-[#1E2A4A]"><Pencil size={14} /></button>
-                  <button onClick={() => handleDelete(g.id)} className="p-2 rounded-lg bg-white/90 text-[#C1443C]"><Trash2 size={14} /></button>
-                </div>
-              </div>
-              <div className="p-3">
-                <p className="text-sm font-medium text-[#1E2A4A] truncate">{g.title}</p>
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <Badge>{g.class === "All" ? "All Classes" : `${g.class}-${g.section}`}</Badge>
-                  <Badge tone="accent">{g.type}</Badge>
-                </div>
-              </div>
-            </div>
-          ))}
+  wrap.innerHTML = entries.map(([id,d])=>`
+    <div class="list-item">
+      <div class="doc-icon">${fileIcon(d.fileName||'')}</div>
+      <div class="info">
+        <div class="title">${escapeHtml(d.title)}</div>
+        <div class="meta">
+          <span class="badge">${escapeHtml(d.category||'')}</span>
+          ${d.cls?`<span class="badge gray">कक्षा ${escapeHtml(d.cls)}</span>`:''}
         </div>
-      )}
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === "edit" ? "Edit Media" : "Add Media"}>
-        <GalleryForm initial={modal?.item} onSave={handleSave} onCancel={() => setModal(null)} />
-      </Modal>
+        ${d.tags?`<div class="hint">${escapeHtml(d.tags)}</div>`:''}
+      </div>
+      <div class="actions">
+        ${d.fileUrl?`<button class="action-ic" title="खोलें" onclick="window.open('${d.fileUrl}','_blank')">⬇️</button>`:''}
+        ${isAdmin?`<button class="action-ic" title="Edit" onclick="openDocModal('${id}')">✏️</button>
+        <button class="action-ic" title="Delete" onclick="deleteDocument('${id}')">🗑️</button>`:''}
+      </div>
     </div>
-  );
+  `).join('');
 }
 
-/* ============================================================
-   TIMETABLE SECTION
-   ============================================================ */
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-function TimetableForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState(initial || { class: "8", section: "A", day: "Monday", period: "1", time: "", subject: "", teacher: "" });
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Class"><Select value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} options={CLASSES} /></Field>
-        <Field label="Section"><Select value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} options={SECTIONS} /></Field>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Day"><Select value={form.day} onChange={(e) => setForm({ ...form, day: e.target.value })} options={DAYS} /></Field>
-        <Field label="Period"><input value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })} className={inputCls} placeholder="1" /></Field>
-      </div>
-      <Field label="Time"><input required value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} className={inputCls} placeholder="e.g. 8:00 - 8:45" /></Field>
-      <Field label="Subject"><input required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className={inputCls} placeholder="e.g. Mathematics" /></Field>
-      <Field label="Teacher"><input required value={form.teacher} onChange={(e) => setForm({ ...form, teacher: e.target.value })} className={inputCls} placeholder="e.g. Priya Verma" /></Field>
-      <div className="flex gap-2 mt-6">
-        <Button type="submit" variant="accent" className="flex-1"><Save size={15} /> Save Period</Button>
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-      </div>
-    </form>
-  );
+/* ================= GALLERY ================= */
+function openGalleryModal(){
+  document.getElementById('galleryTitle').value='';
+  document.getElementById('galleryEvent').value='';
+  document.getElementById('galleryDate').value='';
+  document.getElementById('galleryFile').value='';
+  document.getElementById('galleryProgressText').textContent='';
+  openModal('galleryModal');
 }
 
-function TimetableSection({ data, updateData }) {
-  const [selClass, setSelClass] = useState("8");
-  const [selSection, setSelSection] = useState("A");
-  const [modal, setModal] = useState(null);
+function saveGallery(){
+  if(!requireAdmin()) return;
+  const title = document.getElementById('galleryTitle').value.trim();
+  const event = document.getElementById('galleryEvent').value.trim();
+  const date = document.getElementById('galleryDate').value;
+  const files = Array.from(document.getElementById('galleryFile').files);
 
-  const rows = useMemo(() => data.timetable.filter((t) => t.class === selClass && t.section === selSection), [data.timetable, selClass, selSection]);
-  const grouped = useMemo(() => {
-    const g = {};
-    DAYS.forEach((d) => (g[d] = rows.filter((r) => r.day === d).sort((a, b) => a.period - b.period)));
-    return g;
-  }, [rows]);
+  if(files.length===0){ showToast('कृपया कम से कम एक File चुनें'); return; }
 
-  const handleSave = (form) => {
-    if (modal.mode === "edit") updateData("timetable", data.timetable.map((t) => (t.id === modal.item.id ? { ...t, ...form } : t)));
-    else updateData("timetable", [...data.timetable, { ...form, id: "t" + Date.now() }]);
-    setModal(null);
-  };
-  const handleDelete = (id) => { if (confirm("Yeh period delete karna hai?")) updateData("timetable", data.timetable.filter((t) => t.id !== id)); };
+  const btn = document.getElementById('gallerySaveBtn');
+  btn.disabled = true;
+  document.getElementById('galleryProgressWrap').style.display='block';
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <div><h2 className="font-['Poppins'] text-xl font-semibold text-[#1E2A4A]">Timetable</h2><p className="text-sm text-[#8A8471]">Class aur section select karke schedule dekhein.</p></div>
-        <Button variant="accent" onClick={() => setModal({ mode: "add", item: { class: selClass, section: selSection } })}><Plus size={16} /> Add Period</Button>
-      </div>
-      <div className="flex gap-2.5 mb-5">
-        <div className="w-36"><Select value={selClass} onChange={(e) => setSelClass(e.target.value)} options={CLASSES} /></div>
-        <div className="w-32"><Select value={selSection} onChange={(e) => setSelSection(e.target.value)} options={SECTIONS} /></div>
-      </div>
-      <div className="grid md:grid-cols-2 gap-4">
-        {DAYS.map((day) => (
-          <div key={day} className="bg-white rounded-xl border border-[#EDEAE0] overflow-hidden">
-            <div className="px-4 py-2.5 bg-[#F7F5EF] border-b border-[#EDEAE0] font-['Poppins'] text-sm font-semibold text-[#1E2A4A]">{day}</div>
-            {grouped[day].length === 0 ? <p className="text-xs text-[#A9A492] px-4 py-3">Koi period nahi</p> : grouped[day].map((r) => (
-              <div key={r.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-[#F5F3EC] last:border-0 group">
-                <Clock size={13} className="text-[#8A8471] shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#1E2A4A]">{r.subject}</p>
-                  <p className="text-xs text-[#8A8471]">{r.time} · {r.teacher}</p>
-                </div>
-                <div className="hidden group-hover:flex gap-1">
-                  <button onClick={() => setModal({ mode: "edit", item: r })} className="p-1.5 rounded-md hover:bg-[#F0EEE6] text-[#8A8471]"><Pencil size={13} /></button>
-                  <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-md hover:bg-[#FBEAE8] text-[#C1443C]"><Trash2 size={13} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === "edit" ? "Edit Period" : "Add Period"}>
-        <TimetableForm initial={modal?.item} onSave={handleSave} onCancel={() => setModal(null)} />
-      </Modal>
-    </div>
-  );
-}
+  let completed = 0;
+  const total = files.length;
 
-/* ============================================================
-   STUDENTS SECTION
-   ============================================================ */
+  files.forEach(file=>{
+    const type = file.type.startsWith('video') ? 'video' : 'photo';
+    const path = 'gallery/'+Date.now()+'_'+Math.random().toString(36).slice(2,7)+'_'+file.name;
+    const ref = storage.ref(path);
+    const task = ref.put(file);
+    task.on('state_changed', snap=>{
+      const pct = (snap.bytesTransferred/snap.totalBytes)*100;
+      document.getElementById('galleryProgressBar').style.width = pct+'%';
+    }, err=>{
+      showToast('Upload Error: '+err.message);
+      completed++;
+      checkGalleryDone();
+    }, ()=>{
+      task.snapshot.ref.getDownloadURL().then(url=>{
+        const gId = db.ref('gallery').push().key;
+        db.ref('gallery/'+gId).set({
+          title: title || file.name,
+          event, date, type,
+          fileUrl: url,
+          fileName: file.name,
+          createdAt: Date.now()
+        }).then(()=>{
+          completed++;
+          document.getElementById('galleryProgressText').textContent = `${completed}/${total} अपलोड हो गए`;
+          checkGalleryDone();
+        });
+      });
+    });
+  });
 
-function StudentForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState(initial || { name: "", rollNo: "", class: "8", section: "A", fatherName: "", contact: "", dob: "" });
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
-      <Field label="Student Name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Roll No"><input required value={form.rollNo} onChange={(e) => setForm({ ...form, rollNo: e.target.value })} className={inputCls} /></Field>
-        <Field label="Date of Birth"><input type="date" value={form.dob} onChange={(e) => setForm({ ...form, dob: e.target.value })} className={inputCls} /></Field>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Class"><Select value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} options={CLASSES} /></Field>
-        <Field label="Section"><Select value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} options={SECTIONS} /></Field>
-      </div>
-      <Field label="Father's Name"><input value={form.fatherName} onChange={(e) => setForm({ ...form, fatherName: e.target.value })} className={inputCls} /></Field>
-      <Field label="Contact Number"><input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} className={inputCls} placeholder="10-digit mobile" /></Field>
-      <div className="flex gap-2 mt-6">
-        <Button type="submit" variant="accent" className="flex-1"><Save size={15} /> Save Student</Button>
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-      </div>
-    </form>
-  );
-}
-
-function StudentsSection({ data, updateData, currentUser }) {
-  const isTeacher = currentUser.role === "teacher";
-  const [filterClass, setFilterClass] = useState(isTeacher ? currentUser.assignedClass : "All");
-  const [filterSection, setFilterSection] = useState(isTeacher ? currentUser.assignedSection : "All");
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null);
-
-  const filtered = useMemo(() => data.students.filter((s) => {
-    if (filterClass !== "All" && s.class !== filterClass) return false;
-    if (filterSection !== "All" && s.section !== filterSection) return false;
-    if (search && !s.name.toLowerCase().includes(search.toLowerCase()) && !s.rollNo.includes(search)) return false;
-    return true;
-  }), [data.students, filterClass, filterSection, search]);
-
-  const handleSave = (form) => {
-    if (modal.mode === "edit") updateData("students", data.students.map((s) => (s.id === modal.item.id ? { ...s, ...form } : s)));
-    else updateData("students", [...data.students, { ...form, id: "s" + Date.now() }]);
-    setModal(null);
-  };
-  const handleDelete = (id) => { if (confirm("Is student ka record delete karna hai?")) updateData("students", data.students.filter((s) => s.id !== id)); };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <div><h2 className="font-['Poppins'] text-xl font-semibold text-[#1E2A4A]">Students</h2><p className="text-sm text-[#8A8471]">{isTeacher ? `Class ${currentUser.assignedClass}-${currentUser.assignedSection} ke students.` : "Sabhi students ka record."}</p></div>
-        <Button variant="accent" onClick={() => setModal({ mode: "add", item: isTeacher ? { class: currentUser.assignedClass, section: currentUser.assignedSection } : null })}><Plus size={16} /> Add Student</Button>
-      </div>
-      <FilterBar {...{ filterClass, setFilterClass, filterSection, setFilterSection, search, setSearch }} searchPlaceholder="Naam ya roll no search karein..." />
-      {filtered.length === 0 ? <EmptyState icon={GraduationCap} title="Koi student nahi mila" subtitle="Naya student add karein." /> : (
-        <div className="bg-white rounded-xl border border-[#EDEAE0] overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[#F7F5EF] text-left text-xs font-semibold uppercase tracking-wide text-[#8A8471]">
-                <th className="px-4 py-3">Roll No</th><th className="px-4 py-3">Name</th><th className="px-4 py-3">Class</th>
-                <th className="px-4 py-3">Father's Name</th><th className="px-4 py-3">Contact</th><th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((s) => (
-                <tr key={s.id} className="border-t border-[#F5F3EC] hover:bg-[#FCFBF8]">
-                  <td className="px-4 py-3 text-[#4A5568]">{s.rollNo}</td>
-                  <td className="px-4 py-3 font-medium text-[#1E2A4A]">{s.name}</td>
-                  <td className="px-4 py-3"><Badge>{s.class}-{s.section}</Badge></td>
-                  <td className="px-4 py-3 text-[#4A5568]">{s.fatherName}</td>
-                  <td className="px-4 py-3 text-[#4A5568]">{s.contact}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => setModal({ mode: "edit", item: s })} className="p-1.5 rounded-md hover:bg-[#F0EEE6] text-[#8A8471]"><Pencil size={14} /></button>
-                      <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-md hover:bg-[#FBEAE8] text-[#C1443C]"><Trash2 size={14} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === "edit" ? "Edit Student" : "Add Student"}>
-        <StudentForm initial={modal?.item} onSave={handleSave} onCancel={() => setModal(null)} />
-      </Modal>
-    </div>
-  );
-}
-
-/* ============================================================
-   STAFF SECTION
-   ============================================================ */
-
-function StaffForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState(initial || { name: "", designation: "", assignedClass: "8", assignedSection: "A", contact: "", email: "", joining: "" });
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
-      <Field label="Staff Name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} /></Field>
-      <Field label="Designation"><input required value={form.designation} onChange={(e) => setForm({ ...form, designation: e.target.value })} className={inputCls} placeholder="e.g. Teacher (Maths)" /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Assigned Class"><Select value={form.assignedClass} onChange={(e) => setForm({ ...form, assignedClass: e.target.value })} options={CLASSES} /></Field>
-        <Field label="Assigned Section"><Select value={form.assignedSection} onChange={(e) => setForm({ ...form, assignedSection: e.target.value })} options={SECTIONS} /></Field>
-      </div>
-      <Field label="Email"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputCls} /></Field>
-      <Field label="Contact Number"><input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} className={inputCls} /></Field>
-      <Field label="Joining Date"><input type="date" value={form.joining} onChange={(e) => setForm({ ...form, joining: e.target.value })} className={inputCls} /></Field>
-      <div className="flex gap-2 mt-6">
-        <Button type="submit" variant="accent" className="flex-1"><Save size={15} /> Save Staff</Button>
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-      </div>
-    </form>
-  );
-}
-
-function StaffSection({ data, updateData, currentUser }) {
-  const isAdmin = currentUser.role === "admin";
-  const [filterClass, setFilterClass] = useState("All");
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null);
-
-  const filtered = useMemo(() => data.staff.filter((s) => {
-    if (filterClass !== "All" && s.assignedClass !== filterClass) return false;
-    if (search && !s.name.toLowerCase().includes(search.toLowerCase()) && !s.designation.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }), [data.staff, filterClass, search]);
-
-  const handleSave = (form) => {
-    if (modal.mode === "edit") updateData("staff", data.staff.map((s) => (s.id === modal.item.id ? { ...s, ...form } : s)));
-    else updateData("staff", [...data.staff, { ...form, id: "st" + Date.now() }]);
-    setModal(null);
-  };
-  const handleDelete = (id) => { if (confirm("Is staff member ka record delete karna hai?")) updateData("staff", data.staff.filter((s) => s.id !== id)); };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <div><h2 className="font-['Poppins'] text-xl font-semibold text-[#1E2A4A]">Staff</h2><p className="text-sm text-[#8A8471]">{isAdmin ? "Sabhi teachers aur staff ka record." : "Staff directory (view only)."}</p></div>
-        {isAdmin && <Button variant="accent" onClick={() => setModal({ mode: "add" })}><Plus size={16} /> Add Staff</Button>}
-      </div>
-      <div className="flex flex-wrap gap-2.5 mb-5">
-        <div className="relative flex-1 min-w-[180px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A9A492]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Naam ya designation search karein..." className={`${inputCls} pl-9`} />
-        </div>
-        <div className="w-36"><Select value={filterClass} onChange={(e) => setFilterClass(e.target.value)} options={["All", ...CLASSES]} /></div>
-      </div>
-      {filtered.length === 0 ? <EmptyState icon={UserSquare2} title="Koi staff record nahi mila" subtitle="Naya staff member add karein." /> : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {filtered.map((s) => (
-            <div key={s.id} className="bg-white rounded-xl border border-[#EDEAE0] p-4 flex items-start gap-3">
-              <div className="w-11 h-11 rounded-full bg-[#E8ECF5] flex items-center justify-center shrink-0 font-['Poppins'] font-semibold text-[#1E2A4A]">
-                {s.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#1E2A4A] text-sm">{s.name}</p>
-                <p className="text-xs text-[#8A8471] mt-0.5">{s.designation}</p>
-                <div className="flex items-center gap-1.5 mt-2"><Badge>Class {s.assignedClass}-{s.assignedSection}</Badge></div>
-                <p className="text-xs text-[#8A8471] mt-2">{s.email} · {s.contact}</p>
-              </div>
-              {isAdmin && (
-                <div className="flex flex-col gap-1">
-                  <button onClick={() => setModal({ mode: "edit", item: s })} className="p-1.5 rounded-md hover:bg-[#F0EEE6] text-[#8A8471]"><Pencil size={14} /></button>
-                  <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-md hover:bg-[#FBEAE8] text-[#C1443C]"><Trash2 size={14} /></button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === "edit" ? "Edit Staff" : "Add Staff"}>
-        <StaffForm initial={modal?.item} onSave={handleSave} onCancel={() => setModal(null)} />
-      </Modal>
-    </div>
-  );
-}
-
-/* ============================================================
-   MAIN APP SHELL
-   ============================================================ */
-
-const NAV_ITEMS = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { key: "documents", label: "Documents", icon: FileText },
-  { key: "gallery", label: "Gallery", icon: ImageIcon },
-  { key: "timetable", label: "Timetable", icon: Calendar },
-  { key: "students", label: "Students", icon: GraduationCap },
-  { key: "staff", label: "Staff", icon: UserSquare2 },
-];
-
-function SchoolApp() {
-  const [data, setData] = useState(loadDB);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [activeSection, setActiveSection] = useState("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => { persist(data); }, [data]);
-
-  const updateData = (key, newArr) => setData((prev) => ({ ...prev, [key]: newArr }));
-
-  if (!currentUser) return <LoginScreen users={data.users} onLogin={setCurrentUser} />;
-
-  const renderSection = () => {
-    switch (activeSection) {
-      case "dashboard": return <Dashboard data={data} currentUser={currentUser} />;
-      case "documents": return <DocumentsSection data={data} updateData={updateData} currentUser={currentUser} />;
-      case "gallery": return <GallerySection data={data} updateData={updateData} />;
-      case "timetable": return <TimetableSection data={data} updateData={updateData} />;
-      case "students": return <StudentsSection data={data} updateData={updateData} currentUser={currentUser} />;
-      case "staff": return <StaffSection data={data} updateData={updateData} currentUser={currentUser} />;
-      default: return null;
+  function checkGalleryDone(){
+    if(completed===total){
+      showToast('✅ Gallery Upload पूरा हुआ');
+      closeModal('galleryModal');
+      btn.disabled=false;
+      document.getElementById('galleryProgressWrap').style.display='none';
     }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#FAF8F3] flex" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <aside className={`fixed md:static z-40 inset-y-0 left-0 w-64 bg-[#1E2A4A] text-white flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
-          <div className="w-9 h-9 rounded-lg bg-[#E8A33D] flex items-center justify-center shrink-0"><School size={18} className="text-[#1E2A4A]" /></div>
-          <div className="min-w-0">
-            <p className="font-['Poppins'] font-semibold text-sm leading-tight truncate">School Register</p>
-            <p className="text-white/50 text-xs">Admin Panel</p>
-          </div>
-          <button className="md:hidden ml-auto text-white/60" onClick={() => setSidebarOpen(false)}><X size={18} /></button>
-        </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <button key={item.key} onClick={() => { setActiveSection(item.key); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeSection === item.key ? "bg-[#E8A33D] text-[#1E2A4A]" : "text-white/70 hover:bg-white/10 hover:text-white"}`}>
-              <item.icon size={17} />{item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="px-3 py-4 border-t border-white/10">
-          <div className="flex items-center gap-2.5 px-2 mb-3">
-            <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-xs font-semibold shrink-0">
-              {currentUser.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{currentUser.name}</p>
-              <p className="text-xs text-white/50 capitalize">{currentUser.role}</p>
-            </div>
-          </div>
-          <button onClick={() => setCurrentUser(null)} className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-white">
-            <LogOut size={15} /> Logout
-          </button>
-        </div>
-      </aside>
-      {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-[#EDEAE0]">
-          <button onClick={() => setSidebarOpen(true)} className="text-[#1E2A4A]"><Menu size={20} /></button>
-          <p className="font-['Poppins'] font-semibold text-[#1E2A4A]">School Register</p>
-        </header>
-        <main className="flex-1 p-5 md:p-8 max-w-6xl w-full mx-auto">{renderSection()}</main>
-      </div>
-    </div>
-  );
+  }
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<SchoolApp />);
+function deleteGalleryItem(id){
+  if(!requireAdmin()) return;
+  if(!confirm('क्या आप वाकई यह Item डिलीट करना चाहते हैं?')) return;
+  const g = galleryData[id];
+  db.ref('gallery/'+id).remove().then(()=>{
+    showToast('🗑️ हटा दिया गया');
+    if(g && g.fileUrl){
+      try{ storage.refFromURL(g.fileUrl).delete().catch(()=>{}); }catch(e){}
+    }
+  });
+}
+
+function renderGallery(){
+  const search = (document.getElementById('gallerySearch').value||'').toLowerCase();
+  const ftype = document.getElementById('galleryFilterType').value;
+  const fevent = document.getElementById('galleryFilterEvent').value;
+  const grid = document.getElementById('galleryGrid');
+  const empty = document.getElementById('galleryEmpty');
+
+  let entries = Object.entries(galleryData);
+  entries = entries.filter(([id,g])=>{
+    if(ftype && g.type!==ftype) return false;
+    if(fevent && g.event!==fevent) return false;
+    if(search && !(g.title||'').toLowerCase().includes(search) && !(g.event||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  entries.sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+
+  if(entries.length===0){
+    grid.innerHTML='';
+    empty.style.display='block';
+    return;
+  }
+  empty.style.display='none';
+
+  grid.innerHTML = entries.map(([id,g])=>`
+    <div class="gallery-item" onclick="openViewer('${id}')">
+      ${g.type==='video'
+        ? `<video src="${g.fileUrl}" muted></video><span class="play-ic">▶️</span>`
+        : `<img src="${g.fileUrl}" loading="lazy">`}
+      <div class="tag">${escapeHtml(g.title||'')}</div>
+      ${isAdmin?`<button class="del-btn" onclick="event.stopPropagation();deleteGalleryItem('${id}')">✕</button>`:''}
+    </div>
+  `).join('');
+}
+
+function openViewer(id){
+  const g = galleryData[id];
+  if(!g) return;
+  const content = document.getElementById('viewerContent');
+  content.innerHTML = g.type==='video'
+    ? `<video src="${g.fileUrl}" controls autoplay style="max-width:100%;max-height:75vh;border-radius:10px;"></video>`
+    : `<img src="${g.fileUrl}" style="max-width:100%;max-height:75vh;border-radius:10px;">`;
+  content.innerHTML += `<div style="margin-top:10px;color:#fff;font-size:13px;">${escapeHtml(g.title||'')} ${g.event?' • '+escapeHtml(g.event):''} ${g.date?' • '+fmtDate(g.date):''}</div>`;
+  document.getElementById('viewerModal').style.background = 'rgba(0,0,0,.9)';
+  openModal('viewerModal');
+}
+
+/* ================= STUDENTS ================= */
+function openStudentModal(id){
+  document.getElementById('studentModalTitle').textContent = id ? '🎓 Student Edit करें' : '🎓 Student जोड़ें';
+  document.getElementById('studentId').value = id || '';
+  const fields = ['studentName','studentRoll','studentClass','studentSection','studentFather','studentMother','studentDob','studentGender','studentAadhar','studentPen','studentMobile','studentAddress','studentNotes'];
+  if(id){
+    const s = studentsData[id];
+    document.getElementById('studentName').value = s.name||'';
+    document.getElementById('studentRoll').value = s.roll||'';
+    document.getElementById('studentClass').value = s.cls||'';
+    document.getElementById('studentSection').value = s.section||'';
+    document.getElementById('studentFather').value = s.father||'';
+    document.getElementById('studentMother').value = s.mother||'';
+    document.getElementById('studentDob').value = s.dob||'';
+    document.getElementById('studentGender').value = s.gender||'';
+    document.getElementById('studentAadhar').value = s.aadhar||'';
+    document.getElementById('studentPen').value = s.pen||'';
+    document.getElementById('studentMobile').value = s.mobile||'';
+    document.getElementById('studentAddress').value = s.address||'';
+    document.getElementById('studentNotes').value = s.notes||'';
+  } else {
+    fields.forEach(f=>document.getElementById(f).value='');
+  }
+  openModal('studentModal');
+}
+
+function saveStudent(){
+  if(!requireAdmin()) return;
+  const id = document.getElementById('studentId').value;
+  const name = document.getElementById('studentName').value.trim();
+  const cls = document.getElementById('studentClass').value;
+  if(!name){ showToast('कृपया छात्र का नाम डालें'); return; }
+  if(!cls){ showToast('कृपया कक्षा चुनें'); return; }
+
+  const payload = {
+    name,
+    roll: document.getElementById('studentRoll').value.trim(),
+    cls,
+    section: document.getElementById('studentSection').value,
+    father: document.getElementById('studentFather').value.trim(),
+    mother: document.getElementById('studentMother').value.trim(),
+    dob: document.getElementById('studentDob').value,
+    gender: document.getElementById('studentGender').value,
+    aadhar: document.getElementById('studentAadhar').value.trim(),
+    pen: document.getElementById('studentPen').value.trim(),
+    mobile: document.getElementById('studentMobile').value.trim(),
+    address: document.getElementById('studentAddress').value.trim(),
+    notes: document.getElementById('studentNotes').value.trim(),
+    updatedAt: Date.now()
+  };
+  const sid = id || db.ref('students').push().key;
+  if(!id) payload.createdAt = Date.now();
+
+  db.ref('students/'+sid).update(payload).then(()=>{
+    showToast('✅ Student Save हो गया');
+    closeModal('studentModal');
+  }).catch(e=>showToast('Error: '+e.message));
+}
+
+function deleteStudent(id){
+  if(!requireAdmin()) return;
+  if(!confirm('क्या आप वाकई यह Student Record डिलीट करना चाहते हैं?')) return;
+  db.ref('students/'+id).remove().then(()=>showToast('🗑️ हटा दिया गया'));
+}
+
+function renderStudents(){
+  const search = (document.getElementById('studentSearch').value||'').toLowerCase();
+  const fc = document.getElementById('studentFilterClass').value;
+  const fs = document.getElementById('studentFilterSection').value;
+  const wrap = document.getElementById('studentListCard');
+
+  let entries = Object.entries(studentsData);
+  entries = entries.filter(([id,s])=>{
+    if(fc && s.cls!==fc) return false;
+    if(fs && s.section!==fs) return false;
+    if(search && !(s.name||'').toLowerCase().includes(search) && !(s.roll||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  entries.sort((a,b)=>{
+    if(a[1].cls!==b[1].cls) return (a[1].cls||'').localeCompare(b[1].cls||'');
+    return (parseInt(a[1].roll)||0)-(parseInt(b[1].roll)||0);
+  });
+
+  if(entries.length===0){
+    wrap.innerHTML = `<div class="empty-state"><span class="em">🎓</span>कोई Student नहीं मिला</div>`;
+    return;
+  }
+
+  wrap.innerHTML = entries.map(([id,s])=>`
+    <div class="list-item">
+      <div class="info">
+        <div class="title">${escapeHtml(s.name)} ${s.roll?`<span class="hint">(Roll: ${escapeHtml(s.roll)})</span>`:''}</div>
+        <div class="meta">
+          <span class="badge">कक्षा ${escapeHtml(s.cls)}${s.section?'-'+escapeHtml(s.section):''}</span>
+          ${s.gender?`<span class="badge gray">${escapeHtml(s.gender)}</span>`:''}
+          ${!s.aadhar?`<span class="badge" style="background:#fee2e2;color:#b91c1c;">आधार missing</span>`:''}
+        </div>
+        ${s.father?`<div class="hint">पिता: ${escapeHtml(s.father)}</div>`:''}
+      </div>
+      <div class="actions">
+        ${isAdmin?`<button class="action-ic" title="Edit" onclick="openStudentModal('${id}')">✏️</button>
+        <button class="action-ic" title="Delete" onclick="deleteStudent('${id}')">🗑️</button>`:`<button class="action-ic" title="देखें" onclick="viewStudentDetail('${id}')">👁️</button>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+function viewStudentDetail(id){
+  const s = studentsData[id];
+  if(!s) return;
+  alert(`नाम: ${s.name}\nकक्षा: ${s.cls}${s.section?'-'+s.section:''}\nRoll: ${s.roll||'-'}\nपिता: ${s.father||'-'}\nमाता: ${s.mother||'-'}\nजन्मतिथि: ${s.dob||'-'}\nआधार: ${s.aadhar||'-'}\nमोबाइल: ${s.mobile||'-'}\nपता: ${s.address||'-'}`);
+}
+
+/* ================= STAFF ================= */
+function openStaffModal(id){
+  document.getElementById('staffModalTitle').textContent = id ? '🧑‍🏫 Staff Edit करें' : '🧑‍🏫 Staff जोड़ें';
+  document.getElementById('staffId').value = id || '';
+  const fields = ['staffName','staffDesignation','staffSubject','staffClasses','staffMobile','staffJoining','staffEmpId','staffNotes'];
+  if(id){
+    const s = staffData[id];
+    document.getElementById('staffName').value = s.name||'';
+    document.getElementById('staffDesignation').value = s.designation||'सहायक अध्यापक';
+    document.getElementById('staffSubject').value = s.subject||'';
+    document.getElementById('staffClasses').value = s.classes||'';
+    document.getElementById('staffMobile').value = s.mobile||'';
+    document.getElementById('staffJoining').value = s.joining||'';
+    document.getElementById('staffEmpId').value = s.empId||'';
+    document.getElementById('staffNotes').value = s.notes||'';
+  } else {
+    fields.forEach(f=>document.getElementById(f).value='');
+    document.getElementById('staffDesignation').value = 'सहायक अध्यापक';
+  }
+  openModal('staffModal');
+}
+
+function saveStaff(){
+  if(!requireAdmin()) return;
+  const id = document.getElementById('staffId').value;
+  const name = document.getElementById('staffName').value.trim();
+  if(!name){ showToast('कृपया नाम डालें'); return; }
+
+  const payload = {
+    name,
+    designation: document.getElementById('staffDesignation').value,
+    subject: document.getElementById('staffSubject').value.trim(),
+    classes: document.getElementById('staffClasses').value.trim(),
+    mobile: document.getElementById('staffMobile').value.trim(),
+    joining: document.getElementById('staffJoining').value,
+    empId: document.getElementById('staffEmpId').value.trim(),
+    notes: document.getElementById('staffNotes').value.trim(),
+    updatedAt: Date.now()
+  };
+  const sid = id || db.ref('staff').push().key;
+  if(!id) payload.createdAt = Date.now();
+
+  db.ref('staff/'+sid).update(payload).then(()=>{
+    showToast('✅ Staff Save हो गया');
+    closeModal('staffModal');
+  }).catch(e=>showToast('Error: '+e.message));
+}
+
+function deleteStaff(id){
+  if(!requireAdmin()) return;
+  if(!confirm('क्या आप वाकई यह Staff Record डिलीट करना चाहते हैं?')) return;
+  db.ref('staff/'+id).remove().then(()=>showToast('🗑️ हटा दिया गया'));
+}
+
+function renderStaff(){
+  const search = (document.getElementById('staffSearch').value||'').toLowerCase();
+  const fd = document.getElementById('staffFilterDesignation').value;
+  const wrap = document.getElementById('staffListCard');
+
+  let entries = Object.entries(staffData);
+  entries = entries.filter(([id,s])=>{
+    if(fd && s.designation!==fd) return false;
+    if(search && !(s.name||'').toLowerCase().includes(search) && !(s.designation||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
+
+  if(entries.length===0){
+    wrap.innerHTML = `<div class="empty-state"><span class="em">🧑‍🏫</span>कोई Staff नहीं मिला</div>`;
+    return;
+  }
+
+  wrap.innerHTML = entries.map(([id,s])=>`
+    <div class="list-item">
+      <div class="info">
+        <div class="title">${escapeHtml(s.name)}</div>
+        <div class="meta">
+          <span class="badge">${escapeHtml(s.designation||'')}</span>
+          ${s.subject?`<span class="badge gray">${escapeHtml(s.subject)}</span>`:''}
+        </div>
+        ${s.classes?`<div class="hint">कक्षाएं: ${escapeHtml(s.classes)}</div>`:''}
+        ${s.mobile?`<div class="hint">📱 ${escapeHtml(s.mobile)}</div>`:''}
+      </div>
+      <div class="actions">
+        ${isAdmin?`<button class="action-ic" title="Edit" onclick="openStaffModal('${id}')">✏️</button>
+        <button class="action-ic" title="Delete" onclick="deleteStaff('${id}')">🗑️</button>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ================= SETTINGS ================= */
+function openSettingsModal(){
+  document.getElementById('settingsSchoolName').value = settingsData.schoolName || '';
+  document.getElementById('settingsUdise').value = settingsData.udise || '';
+  document.getElementById('newAdminPassword').value = '';
+  openModal('settingsModal');
+}
+function saveSettings(){
+  if(!requireAdmin()) return;
+  const schoolName = document.getElementById('settingsSchoolName').value.trim();
+  const udise = document.getElementById('settingsUdise').value.trim();
+  db.ref('settings').update({ schoolName, udise }).then(()=>{
+    showToast('✅ Settings Save हो गईं');
+    closeModal('settingsModal');
+  });
+}
+function changePassword(){
+  if(!requireAdmin()) return;
+  const np = document.getElementById('newAdminPassword').value;
+  if(!np || np.length<4){ showToast('कम से कम 4 अक्षर का Password डालें'); return; }
+  db.ref('settings/'+ADMIN_PASSWORD_KEY).set(np).then(()=>{
+    showToast('✅ Password बदल दिया गया');
+    document.getElementById('newAdminPassword').value='';
+  });
+}
+
+/* ================= INIT ================= */
+window.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
 </html>
